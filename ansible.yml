@@ -1,0 +1,19 @@
+---
+- name: Deploy Docker Container
+  hosts: my_ec2_instances
+  become: yes
+
+  tasks:
+    - name: Pull Docker Image
+      docker_image:
+        name: dianayeghiazaryan/examimage:v1.1
+        source: pull
+        state: present
+
+    - name: Run Docker Container
+      docker_container:
+        name: examimagedianalusine
+        image: examimage:v1.1
+        state: started
+        ports:
+          - "80:80" 
