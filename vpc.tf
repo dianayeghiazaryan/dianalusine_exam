@@ -1,9 +1,4 @@
-# We Defined the AWS provider and region
-provider "aws" {
-  region = "eu-west-3"
-}
-
-# We Created a VPC
+#We Created a VPC
 resource "aws_vpc" "exam_vpc" {
   cidr_block          = "10.0.0.0/16"
 
@@ -59,4 +54,5 @@ resource "aws_subnet" "private_subnet_2" {
     Name = "Privite2"
   }
 }
+
 

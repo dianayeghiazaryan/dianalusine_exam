@@ -1,4 +1,5 @@
 # We Defined a security group for instances in the VPC
+# Public Security group
 resource "aws_security_group" "exam_sg" {
   name        = "exam-security-group"
   description = "Exam security group for instances in the VPC"
@@ -45,8 +46,9 @@ resource "aws_security_group" "exam_sg" {
     Name = "public_sg"
   }
 }
-resource "aws_security_group" "private_sg" {
-  name   = "private_security"
+# Private Security Group
+resource "aws_security_group" "examprivate_sg" {
+  name   = "exam_private_security"
   vpc_id = aws_vpc.exam_vpc.id
 
 
@@ -63,8 +65,15 @@ resource "aws_security_group" "private_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["10.100.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
+    ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    }
 
   egress {
     from_port   = 0

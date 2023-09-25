@@ -138,4 +138,77 @@ resource "aws_lb_listener_rule" "my_listener_rule" {
     }
   }
 }
+# Created an IAM role for EC2 instances 
+resource "aws_iam_role" "ec2_role" {
+  name = "ec2_instance_role"
+  
+  # Attached the necessary policies to the role
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Created an IAM instance profile for EC2 instances
+resource "aws_iam_instance_profile" "ec2_instance_profile" {
+  name = "ec2_instance_profile"
+  role = aws_iam_role.ec2_role.name
+}
+
+# Define a list of subnet IDs
+locals {
+  subnet_ids = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+}
+
+# Create EC2 instances
+resource "aws_instance" "exam_instance" {
+  count                   = 1
+  ami                     = "ami-008bcc0a51a849165"
+  instance_type           = "t2.micro"
+  subnet_id               = local.subnet_ids[count.index]
+  iam_instance_profile     = aws_iam_instance_profile.ec2_instance_profile.name
+  key_name                = "newkey"
+  security_groups         = [aws_security_group.exam_sg.id]
+  associate_public_ip_address = true
+  user_data = file("user-data.sh")
+  tags = {
+    Name = "exam${count.index + 1}"
+  }
+}
+
+# Defined an Auto Scaling Group (ASG)
+resource "aws_autoscaling_group" "exam_asg" {
+  name                 = "exam-asg"
+  launch_configuration = aws_launch_configuration.exam_lc.name
+  min_size             = 1
+  max_size             = 3
+  desired_capacity     = 2
+  vpc_zone_identifier  = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+  target_group_arns    = [aws_lb_target_group.my_target_group.arn]
+}
+# Defined a Launch Configuration
+resource "aws_launch_configuration" "exam_lc" {
+  name_prefix          = "exam-lc"
+  image_id             = "ami-008bcc0a51a849165"  
+  instance_type        = "t2.micro"             
+  security_groups      = [aws_security_group.exam_sg.id]
+  key_name             = "newkey"              
+  associate_public_ip_address = true
+  iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
+
+}
+# Attached the instances to the ELB
+resource "aws_autoscaling_attachment" "exam_asg_attachment" {
+  autoscaling_group_name = aws_autoscaling_group.exam_asg.name
+  lb_target_group_arn   = aws_lb_target_group.my_target_group.arn
+}
+
 
